@@ -509,6 +509,14 @@ strip-ansi@^7.0.1:
   dependencies:
     ansi-regex "^6.0.1"
 
+tsoa@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/tsoa/-/tsoa-6.0.1.tgz#0a1a9ea80b4eca979b71cf4b33db49375b87e422"
+  integrity sha512-Far5BFpFvMYVMZxt87O7hOFGpa6dALQ8XHhdDytry0IhIUJnRliVXLZ2t2KGcgNw0bIwsk+2XkWra18LL6cORA==
+  dependencies:
+    "@tsoa/cli" "^6.0.1"
+    "@tsoa/runtime" "^6.0.0"
+
 typescript@>=5, typescript@^5.3.3:
   version "5.3.3"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.3.3.tgz#b3ce6ba258e72e6305ba66f5c9b452aaee3ffe37"

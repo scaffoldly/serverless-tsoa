@@ -17,12 +17,15 @@
     "postinstall": "yarn build"
   },
   "dependencies": {
-    "@tsoa/cli": "^6.0.1",
     "@types/fs-extra": "^11.0.4",
     "@types/node": ">=16",
     "typescript": ">=5"
   },
   "peerDependencies": {
-    "serverless": ">=3.0.0"
+    "serverless": ">=3.0.0",
+    "tsoa": ">=6"
+  },
+  "devDependencies": {
+    "tsoa": "^6.0.1"
   }
 }

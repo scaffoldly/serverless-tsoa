@@ -1,10 +1,17 @@
-import { generateSpecAndRoutes } from "@tsoa/cli";
+import {
+  generateRoutes,
+  generateSpec,
+  ExtendedRoutesConfig,
+  ExtendedSpecConfig,
+} from "tsoa";
 
 type PluginName = "tsoa";
 const PLUGIN_NAME: PluginName = "tsoa";
 
 type PluginConfig = {
   reloadHandler?: boolean;
+  spec?: ExtendedSpecConfig;
+  routes?: ExtendedRoutesConfig;
 };
 
 type ServerlessCustom = {
@@ -126,8 +133,23 @@ class ServerlessTsoa {
   }
 
   generateSpecAndRoutes = async (): Promise<void> => {
-    const metadata = await generateSpecAndRoutes({});
-    console.log("!!! metadata", metadata);
+    const { spec, routes } = this.pluginConfig;
+    if (!spec) {
+      throw new Error(
+        "No custom.tsoa.spec configuration found in serverless.yml"
+      );
+    }
+
+    if (!routes) {
+      throw new Error(
+        "No custom.tsoa.routes configuration found in serverless.yml"
+      );
+    }
+
+    const specMetadata = await generateSpec(spec);
+    console.log("!!! specMetadata", specMetadata);
+    const routeMetadata = await generateRoutes(routes);
+    console.log("!!! routesMetadata", routeMetadata);
   };
 
   watch = async (): Promise<void> => {};
