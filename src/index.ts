@@ -128,14 +128,14 @@ class ServerlessTsoa {
     this.log = new Log(options);
 
     this.commands = {
-      generate: {
-        lifecycleEvents: ["generate"],
+      tsoa: {
+        lifecycleEvents: ["run"],
       },
     };
 
     this.hooks = {
       initialize: async () => {},
-      "tsoa:generate": async () => {
+      "tsoa:run": async () => {
         await this.generateSpecAndRoutes();
       },
       "before:offline:start": async () => {
