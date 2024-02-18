@@ -154,35 +154,35 @@ class ServerlessTsoa {
       );
     }
 
-    // Do generate into a workdir to avoid excessive reloading during spec/route generation
-    const workDir = path.join(
-      this.serverlessConfig.servicePath,
-      `.${PLUGIN_NAME}`
-    );
+    // // Do generate into a workdir to avoid excessive reloading during spec/route generation
+    // const workDir = path.join(
+    //   this.serverlessConfig.servicePath,
+    //   `.${PLUGIN_NAME}`
+    // );
 
     const specOutputDirectory = spec.outputDirectory;
     const specOutputFile = path.join(
       specOutputDirectory,
       `${spec.specFileBaseName || "swagger"}.json`
     );
-    const workdirSpecOutputFile = path.join(workDir, specOutputFile);
-    spec.outputDirectory = path.join(workDir, spec.outputDirectory);
+    // const workdirSpecOutputFile = path.join(workDir, specOutputFile);
+    // spec.outputDirectory = path.join(workDir, spec.outputDirectory);
 
     const routesOutputDirectory = routes.routesDir;
     const routesOutputFile = path.join(
       routesOutputDirectory,
       `${routes.routesFileName || "routes.ts"}`
     );
-    const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
-    routes.routesDir = path.join(workDir, routes.routesDir);
+    // const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
+    // routes.routesDir = path.join(workDir, routes.routesDir);
 
     const specMetadata = await generateSpec(spec);
-    console.log("!!! specMetadata", JSON.stringify(specMetadata));
+    console.log("!!! specMetadata", JSON.stringify(specMetadata, null, 2));
     const routeMetadata = await generateRoutes(routes);
-    console.log("!!! routesMetadata", JSON.stringify(routeMetadata));
+    console.log("!!! routesMetadata", JSON.stringify(routeMetadata, null, 2));
 
-    await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
-    await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
+    // await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
+    // await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
 
     return { specFile: specOutputFile, routesFile: routesOutputFile };
   };
