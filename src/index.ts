@@ -111,6 +111,12 @@ class ServerlessTsoa {
     [key: string]: () => Promise<void>;
   };
 
+  commands: {
+    [key: string]: {
+      lifecycleEvents: string[];
+    };
+  };
+
   constructor(serverless: Serverless, protected options: Options) {
     this.serverless = serverless;
     this.serverlessConfig = serverless.config;
@@ -121,8 +127,17 @@ class ServerlessTsoa {
 
     this.log = new Log(options);
 
+    this.commands = {
+      generate: {
+        lifecycleEvents: ["generate"],
+      },
+    };
+
     this.hooks = {
       initialize: async () => {},
+      "tsoa:generate": async () => {
+        await this.generateSpecAndRoutes();
+      },
       "before:offline:start": async () => {
         this.log.verbose("before:offline:start");
         const { specFile, routesFile } = await this.generateSpecAndRoutes();
