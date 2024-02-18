@@ -1,0 +1,42 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    /* Basic Options */
+    "incremental": true,
+    "target": "ESNext",
+    "module": "CommonJS",
+    "rootDir": "./src",
+    "outDir": "./",
+    "sourceMap": false,
+    "declaration": false,
+    "declarationMap": false,
+
+    /* Strict Type-Checking Options */
+    "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "skipLibCheck": true,
+
+    /* Additional Checks */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Module Resolution Options */
+    "baseUrl": "./",
+    "esModuleInterop": true,
+
+    /* Experimental Options */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* Advanced Options */
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": ["node_modules/**/*", "examples/**/*"]
+}
