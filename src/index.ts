@@ -1,3 +1,8 @@
+import path from "path";
+import fs from "fs-extra";
+import { sha1 } from "js-sha1";
+import { v4 as uuid } from "uuid";
+import chokidar from "chokidar";
 import {
   generateRoutes,
   generateSpec,
@@ -120,9 +125,9 @@ class ServerlessTsoa {
       initialize: async () => {},
       "before:offline:start": async () => {
         this.log.verbose("before:offline:start");
-        await this.generateSpecAndRoutes();
+        const { specFile, routesFile } = await this.generateSpecAndRoutes();
         if (this.pluginConfig.reloadHandler) {
-          await this.watch();
+          await this.watch(specFile, routesFile);
         }
       },
       "before:package:createDeploymentArtifacts": async () => {
@@ -132,7 +137,10 @@ class ServerlessTsoa {
     };
   }
 
-  generateSpecAndRoutes = async (): Promise<void> => {
+  generateSpecAndRoutes = async (): Promise<{
+    specFile: string;
+    routesFile: string;
+  }> => {
     const { spec, routes } = this.pluginConfig;
     if (!spec) {
       throw new Error(
@@ -146,13 +154,77 @@ class ServerlessTsoa {
       );
     }
 
+    // Do generate into a workdir to avoid excessive reloading during spec/route generation
+    const workDir = path.join(
+      this.serverlessConfig.servicePath,
+      `.${PLUGIN_NAME}`
+    );
+
+    const specOutputDirectory = spec.outputDirectory;
+    const specOutputFile = path.join(
+      specOutputDirectory,
+      `${spec.specFileBaseName || "swagger"}.json`
+    );
+    const workdirSpecOutputFile = path.join(workDir, specOutputFile);
+    spec.outputDirectory = path.join(workDir, spec.outputDirectory);
+
+    const routesOutputDirectory = routes.routesDir;
+    const routesOutputFile = path.join(
+      routesOutputDirectory,
+      `${routes.routesFileName || "routes.ts"}`
+    );
+    const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
+    routes.routesDir = path.join(workDir, routes.routesDir);
+
     const specMetadata = await generateSpec(spec);
-    console.log("!!! specMetadata", specMetadata);
+    console.log("!!! specMetadata", JSON.stringify(specMetadata));
     const routeMetadata = await generateRoutes(routes);
-    console.log("!!! routesMetadata", routeMetadata);
+    console.log("!!! routesMetadata", JSON.stringify(routeMetadata));
+
+    await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
+    await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
+
+    return { specFile: specOutputFile, routesFile: routesOutputFile };
   };
 
-  watch = async (): Promise<void> => {};
+  watch = async (specFile: string, routesFile: string): Promise<void> => {
+    const watcher = chokidar.watch(
+      path.join(this.serverlessConfig.servicePath),
+      {
+        ignored: /(^|[\/\\])\../,
+        persistent: true,
+        atomic: 1000,
+      }
+    );
+
+    watcher.unwatch([specFile, routesFile]);
+
+    watcher.on("change", async (file) => {
+      this.log.verbose(`File ${file} has been changed`);
+      await this.generateSpecAndRoutes();
+    });
+  };
+
+  conditionalCopy = async (src: string, dest: string): Promise<void> => {
+    // hash src and dest
+    const srcHash = await this.hashFile(src);
+    const destHash = await this.hashFile(dest);
+
+    if (srcHash !== destHash) {
+      await fs.ensureDir(path.dirname(dest));
+      await fs.copy(src, dest);
+    }
+  };
+
+  hashFile = async (file: string): Promise<string> => {
+    try {
+      const buffer = await fs.readFile(file);
+      return sha1(buffer);
+    } catch (e) {
+      // Return randomness to force a copy
+      return sha1(uuid());
+    }
+  };
 }
 
 module.exports = ServerlessTsoa;
