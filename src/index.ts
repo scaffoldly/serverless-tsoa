@@ -1,7 +1,5 @@
 import path from "path";
 import fs from "fs-extra";
-import { sha1 } from "js-sha1";
-import { v4 as uuid } from "uuid";
 import chokidar from "chokidar";
 import {
   generateRoutes,
@@ -176,10 +174,8 @@ class ServerlessTsoa {
     // const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
     // routes.routesDir = path.join(workDir, routes.routesDir);
 
-    const specMetadata = await generateSpec(spec);
-    console.log("!!! specMetadata", JSON.stringify(specMetadata, null, 2));
-    const routeMetadata = await generateRoutes(routes);
-    console.log("!!! routesMetadata", JSON.stringify(routeMetadata, null, 2));
+    await generateSpec(spec);
+    await generateRoutes(routes);
 
     // await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
     // await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
@@ -193,7 +189,7 @@ class ServerlessTsoa {
       {
         ignored: /(^|[\/\\])\../,
         persistent: true,
-        atomic: 1000,
+        usePolling: false,
       }
     );
 
@@ -203,27 +199,6 @@ class ServerlessTsoa {
       this.log.verbose(`File ${file} has been changed`);
       await this.generateSpecAndRoutes();
     });
-  };
-
-  conditionalCopy = async (src: string, dest: string): Promise<void> => {
-    // hash src and dest
-    const srcHash = await this.hashFile(src);
-    const destHash = await this.hashFile(dest);
-
-    if (srcHash !== destHash) {
-      await fs.ensureDir(path.dirname(dest));
-      await fs.copy(src, dest);
-    }
-  };
-
-  hashFile = async (file: string): Promise<string> => {
-    try {
-      const buffer = await fs.readFile(file);
-      return sha1(buffer);
-    } catch (e) {
-      // Return randomness to force a copy
-      return sha1(uuid());
-    }
   };
 }
 
