@@ -178,7 +178,9 @@ class ServerlessTsoa {
     // const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
     // routes.routesDir = path.join(workDir, routes.routesDir);
 
+    this.log.verbose(`Generating spec...`);
     await generateSpec(spec);
+    this.log.verbose(`Generating routes...`);
     await generateRoutes(routes);
 
     await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
