@@ -17,9 +17,13 @@
     "postinstall": "yarn build"
   },
   "dependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/node": ">=16",
+    "@types/uuid": "^9.0.8",
     "chokidar": "^3.6.0",
-    "typescript": ">=5"
+    "js-sha1": "^0.7.0",
+    "typescript": ">=5",
+    "uuid": "^9.0.1"
   },
   "peerDependencies": {
     "serverless": ">=3.0.0",

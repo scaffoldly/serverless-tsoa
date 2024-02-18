@@ -1,4 +1,7 @@
 import path from "path";
+import fs from "fs-extra";
+import { sha1 } from "js-sha1";
+import { v4 as uuid } from "uuid";
 import chokidar from "chokidar";
 import {
   generateRoutes,
@@ -151,32 +154,36 @@ class ServerlessTsoa {
       );
     }
 
-    // // Do generate into a workdir to avoid excessive reloading during spec/route generation
-    // const workDir = path.join(
-    //   this.serverlessConfig.servicePath,
-    //   `.${PLUGIN_NAME}`
-    // );
+    // Do generate into a workdir to avoid excessive reloading
+    const workDir = path.join(
+      this.serverlessConfig.servicePath,
+      `.${PLUGIN_NAME}`
+    );
 
     const specOutputDirectory = spec.outputDirectory;
     const specOutputFile = path.join(
       specOutputDirectory,
-      `${spec.specFileBaseName || "swagger"}.json`
+      `${spec.specFileBaseName || "swagger"}.${spec.yaml ? "yaml" : "json"}`
     );
-    // const workdirSpecOutputFile = path.join(workDir, specOutputFile);
-    // spec.outputDirectory = path.join(workDir, spec.outputDirectory);
+    const workdirSpecOutputFile = path.join(workDir, specOutputFile);
+    spec.outputDirectory = path.join(workDir, spec.outputDirectory);
 
     const routesOutputDirectory = routes.routesDir;
     const routesOutputFile = path.join(
       routesOutputDirectory,
       `${routes.routesFileName || "routes.ts"}`
     );
+
+    // DEVNOTE: Can't do workdir for routes since tsoa screws up relatve paths
     // const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
     // routes.routesDir = path.join(workDir, routes.routesDir);
 
     await generateSpec(spec);
     await generateRoutes(routes);
 
-    // await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
+    await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
+
+    // DEVNOTE: Can't do workdir for routes since tsoa screws up relatve paths
     // await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
 
     return { specFile: specOutputFile, routesFile: routesOutputFile };
@@ -186,7 +193,7 @@ class ServerlessTsoa {
     const watcher = chokidar.watch(
       path.join(this.serverlessConfig.servicePath),
       {
-        ignored: /(^|[\/\\])\../,
+        ignored: /(^|[\/\\])\../, // ignore dotfiles
         persistent: true,
         usePolling: false,
       }
@@ -198,6 +205,27 @@ class ServerlessTsoa {
       this.log.verbose(`File ${file} has been changed`);
       await this.generateSpecAndRoutes();
     });
+  };
+
+  conditionalCopy = async (src: string, dest: string): Promise<void> => {
+    // hash src and dest
+    const srcHash = await this.hashFile(src);
+    const destHash = await this.hashFile(dest);
+
+    if (srcHash !== destHash) {
+      await fs.ensureDir(path.dirname(dest));
+      await fs.copy(src, dest);
+    }
+  };
+
+  hashFile = async (file: string): Promise<string> => {
+    try {
+      const buffer = await fs.readFile(file);
+      return sha1(buffer);
+    } catch (e) {
+      // Return randomness to force a copy
+      return sha1(uuid());
+    }
   };
 }
 
