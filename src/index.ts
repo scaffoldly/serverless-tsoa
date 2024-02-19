@@ -223,6 +223,8 @@ class ServerlessTsoa {
       openApiDestinations.push(path.join(outputWorkFolder, outputBuildFolder));
     }
 
+    console.log("!!! openApiDestinations", openApiDestinations);
+
     // TODO: support webpack and native bundling to .serverless
 
     // Generate into a workdir to avoid excessive reloading
