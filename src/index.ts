@@ -257,6 +257,7 @@ class ServerlessTsoa {
       this.specHash = newSpecHash;
     }
 
+    console.log("!!! this.specFile", this.specFile);
     await this.conditionalCopy(workdirSpecFile, this.specFile);
 
     // Using .then becuse the following functions are not dependent on each other
