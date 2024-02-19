@@ -270,7 +270,7 @@ class ServerlessTsoa {
         this.log.warning(`Unable to generate OpenAPI Routes: ${e.message}`);
       });
 
-    this.generateClientSpec(this.specFile, workDir)
+    this.generateClientSpec(workDir)
       .then((clientFile) => {
         if (clientFile) {
           this.log.verbose(`Generated OpenAPI Client: ${clientFile}`);
@@ -296,10 +296,7 @@ class ServerlessTsoa {
     );
   };
 
-  generateClientSpec = async (
-    specFile: string,
-    workDir: string
-  ): Promise<string | undefined> => {
+  generateClientSpec = async (workDir: string): Promise<string | undefined> => {
     const { client } = this.pluginConfig;
     if (!client) {
       return;
@@ -320,7 +317,7 @@ class ServerlessTsoa {
     await generateClientSpec(
       {
         input: {
-          target: specFile,
+          target: this.specFile,
         },
         output,
       },
