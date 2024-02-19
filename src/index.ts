@@ -238,6 +238,8 @@ class ServerlessTsoa {
 
     openApiDestinations.push(this.specFile);
 
+    console.log("!!! openApiDestinations", openApiDestinations);
+
     try {
       await generateTsoaSpec(spec);
     } catch (e) {
