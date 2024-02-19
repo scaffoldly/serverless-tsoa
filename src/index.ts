@@ -135,21 +135,18 @@ class ServerlessTsoa {
       },
       "before:offline:start": async () => {
         this.log.verbose("before:offline:start");
-        const { files: excludeFiles } = await this.generate();
-        if (this.pluginConfig.reloadHandler) {
-          await this.watch(excludeFiles);
-        }
+        this.generate(this.pluginConfig.reloadHandler).catch(
+          this.handleErrorAndRetry.bind(this)
+        );
       },
       "before:package:createDeploymentArtifacts": async () => {
         this.log.verbose("before:package:createDeploymentArtifacts");
-        await this.generate();
+        await this.generate(false);
       },
     };
   }
 
-  generate = async (): Promise<{
-    files: string[];
-  }> => {
+  generate = async (watch?: boolean): Promise<void> => {
     const { spec, routes, client } = this.pluginConfig;
     if (!spec) {
       throw new Error(
@@ -236,33 +233,37 @@ class ServerlessTsoa {
       clientFiles.push(target);
     }
 
-    return {
-      files: [specFile, routesFile, ...clientFiles],
-    };
-  };
+    if (!watch) {
+      return;
+    }
 
-  watch = async (excludeFiles: string[]): Promise<void> => {
+    let excludeFiles = [specFile, routesFile, ...clientFiles];
+
     const watcher = chokidar.watch(
       path.join(this.serverlessConfig.servicePath),
       {
+        awaitWriteFinish: true,
+        atomic: true,
+        ignorePermissionErrors: true,
         ignored: /(^|[\/\\])\../, // ignore dotfiles
-        persistent: true,
-        usePolling: false,
       }
     );
 
     watcher.unwatch(excludeFiles);
 
-    const handler = async (file: string) => {
+    watcher.on("change", (file) => {
       this.log.verbose(`File ${file} has been changed`);
-      await this.generate();
-      watcher.on("change", handler);
-    };
-
-    watcher.on("change", async (file) => {
-      watcher.off("change", handler);
-      await handler(file);
+      this.generate(this.pluginConfig.reloadHandler).catch(
+        this.handleErrorAndRetry.bind(this)
+      );
     });
+  };
+
+  handleErrorAndRetry = (error: Error) => {
+    this.log.error(error.message);
+    this.generate(this.pluginConfig.reloadHandler).catch(
+      this.handleErrorAndRetry.bind(this)
+    );
   };
 
   conditionalCopy = async (src: string, dest: string): Promise<void> => {
