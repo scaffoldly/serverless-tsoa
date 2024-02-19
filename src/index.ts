@@ -245,18 +245,22 @@ class ServerlessTsoa {
         awaitWriteFinish: true,
         atomic: true,
         ignorePermissionErrors: true,
+        persistent: false,
         ignored: /(^|[\/\\])\../, // ignore dotfiles
       }
     );
 
     watcher.unwatch(excludeFiles);
 
-    watcher.on("change", (file) => {
+    const handler = (file: string) => {
+      watcher.close();
       this.log.verbose(`File ${file} has been changed`);
       this.generate(this.pluginConfig.reloadHandler).catch(
         this.handleErrorAndRetry.bind(this)
       );
-    });
+    };
+
+    watcher.on("change", handler);
   };
 
   handleErrorAndRetry = (error: Error) => {
