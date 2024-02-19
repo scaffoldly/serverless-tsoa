@@ -200,17 +200,21 @@ class ServerlessTsoa {
   }
 
   generate = async (): Promise<void> => {
-    const { spec, routes } = this.pluginConfig;
+    let { spec, routes } = this.pluginConfig;
     if (!spec) {
       throw new Error(
         "No custom.tsoa.spec configuration found in serverless.yml"
       );
+    } else {
+      spec = JSON.parse(JSON.stringify(spec)) as ExtendedSpecConfig;
     }
 
     if (!routes) {
       throw new Error(
         "No custom.tsoa.routes configuration found in serverless.yml"
       );
+    } else {
+      routes = JSON.parse(JSON.stringify(routes)) as ExtendedRoutesConfig;
     }
 
     let openApiDestinations: string[] = [];
@@ -222,8 +226,6 @@ class ServerlessTsoa {
       const outputBuildFolder = esbuild.outputBuildFolder || ".build";
       openApiDestinations.push(path.join(outputWorkFolder, outputBuildFolder));
     }
-
-    console.log("!!! openApiDestinations", openApiDestinations);
 
     // TODO: support webpack and native bundling to .serverless
 
@@ -257,8 +259,7 @@ class ServerlessTsoa {
       this.specHash = newSpecHash;
     }
 
-    console.log("!!! this.specFile", this.specFile);
-    await this.conditionalCopy(workdirSpecFile, this.specFile);
+    openApiDestinations.push(this.specFile);
 
     // Using .then becuse the following functions are not dependent on each other
     generateTsoaRoutes({ ...routes, noWriteIfUnchanged: true })
@@ -280,7 +281,10 @@ class ServerlessTsoa {
       });
 
     openApiDestinations.map((destination) =>
-      this.conditionalCopy(this.specFile, path.join(destination, this.specFile))
+      this.conditionalCopy(
+        workdirSpecFile,
+        path.join(destination, this.specFile)
+      )
         .then((dest) => {
           if (dest) {
             this.log.verbose(`Copied OpenAPI Spec to: ${dest}`);
@@ -356,7 +360,6 @@ class ServerlessTsoa {
     src: string,
     dest: string
   ): Promise<string | undefined> => {
-    console.log(`!!! conditionalCopy src: ${src} dest: ${dest}`);
     // hash src and dest
     const [srcHash, destHash] = await Promise.all([
       this.hashFile(src),
