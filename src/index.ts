@@ -259,7 +259,7 @@ class ServerlessTsoa {
       this.specHash = newSpecHash;
     }
 
-    openApiDestinations.push(this.specFile);
+    await this.conditionalCopy(workdirSpecFile, this.specFile);
 
     // Using .then becuse the following functions are not dependent on each other
     generateTsoaRoutes({ ...routes, noWriteIfUnchanged: true })
@@ -281,10 +281,7 @@ class ServerlessTsoa {
       });
 
     openApiDestinations.map((destination) =>
-      this.conditionalCopy(
-        workdirSpecFile,
-        path.join(destination, this.specFile)
-      )
+      this.conditionalCopy(this.specFile, path.join(destination, this.specFile))
         .then((dest) => {
           if (dest) {
             this.log.verbose(`Copied OpenAPI Spec to: ${dest}`);
