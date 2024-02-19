@@ -243,7 +243,7 @@ class ServerlessTsoa {
         throw e;
       }
       this.specHash = undefined;
-      this.log.warning(e.message);
+      this.log.warning(`Unable to generate OpenAPI Spec: ${e.message}`);
       return;
     }
 
@@ -263,7 +263,7 @@ class ServerlessTsoa {
         this.log.verbose(`Generated OpenAPI Routes: ${this.routesFile}`);
       })
       .catch((e) => {
-        this.log.warning(e.message);
+        this.log.warning(`Unable to generate OpenAPI Routes: ${e.message}`);
       });
 
     this.generateClientSpec(workdirSpecFile, workDir)
@@ -273,7 +273,7 @@ class ServerlessTsoa {
         }
       })
       .catch((e) => {
-        this.log.warning(e.message);
+        this.log.warning(`Unable to generate OpenAPI Client: ${e.message}`);
       });
 
     openApiDestinations.map((destination) =>
@@ -287,7 +287,7 @@ class ServerlessTsoa {
           }
         })
         .catch((e) => {
-          this.log.warning(e.message);
+          this.log.warning(`Unable to copy OpenAPI Spec: ${e.message}`);
         })
     );
   };
@@ -375,6 +375,7 @@ class ServerlessTsoa {
   };
 
   hashFile = async (file: string): Promise<string> => {
+    console.log(new Error(`hashing file ${file}`));
     try {
       const buffer = await fs.readFile(file);
       return sha1(buffer);
