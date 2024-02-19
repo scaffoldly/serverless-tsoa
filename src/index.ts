@@ -232,7 +232,9 @@ class ServerlessTsoa {
     );
 
     const workdirSpecFile = path.join(workDir, this.specFile);
+    console.log("!!! workdirSpecFile", workdirSpecFile);
     spec.outputDirectory = path.join(workDir, spec.outputDirectory);
+    console.log("!!! spec.outputDirectory", spec.outputDirectory);
 
     openApiDestinations.push(this.specFile);
 
@@ -244,7 +246,6 @@ class ServerlessTsoa {
       if (!(e instanceof Error)) {
         throw e;
       }
-      this.specHash = undefined;
       this.log.warning(e.message);
       return;
     }
