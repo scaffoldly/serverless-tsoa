@@ -260,7 +260,7 @@ class ServerlessTsoa {
   };
 
   handleErrorAndRetry = (error: Error) => {
-    this.log.error(error.message);
+    this.log.warning(error.message);
     this.generate(this.pluginConfig.reloadHandler).catch(
       this.handleErrorAndRetry.bind(this)
     );
