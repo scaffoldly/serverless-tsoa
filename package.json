@@ -17,11 +17,13 @@
     "postinstall": "yarn build"
   },
   "dependencies": {
+    "@orval/core": "^6.25.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": ">=16",
     "@types/uuid": "^9.0.8",
     "chokidar": "^3.6.0",
     "js-sha1": "^0.7.0",
+    "orval": "^6.25.0",
     "typescript": ">=5",
     "uuid": "^9.0.1"
   },

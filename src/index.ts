@@ -4,11 +4,13 @@ import { sha1 } from "js-sha1";
 import { v4 as uuid } from "uuid";
 import chokidar from "chokidar";
 import {
-  generateRoutes,
-  generateSpec,
+  generateRoutes as generateTsoaRoutes,
+  generateSpec as generateTsoaSpec,
   ExtendedRoutesConfig,
   ExtendedSpecConfig,
 } from "tsoa";
+import { generate as generateClientSpec } from "orval";
+import { Options as ClientConfig } from "@orval/core";
 
 type PluginName = "tsoa";
 const PLUGIN_NAME: PluginName = "tsoa";
@@ -17,6 +19,7 @@ type PluginConfig = {
   reloadHandler?: boolean;
   spec?: ExtendedSpecConfig;
   routes?: ExtendedRoutesConfig;
+  client?: ClientConfig;
 };
 
 type ServerlessCustom = {
@@ -26,15 +29,6 @@ type ServerlessCustom = {
 type ServerlessService = {
   service: string;
   custom?: ServerlessCustom;
-  provider: {
-    stage: string;
-    environment?: { [key: string]: string | { Ref?: string } };
-  };
-  getAllFunctions: () => string[];
-  getFunction: (functionName: string) => {
-    name: string;
-    events?: any[];
-  };
 };
 
 type ServerlessConfig = {
@@ -43,9 +37,6 @@ type ServerlessConfig = {
 
 type Serverless = {
   service: ServerlessService;
-  pluginManager: {
-    spawn: (command: string) => Promise<void>;
-  };
   config: any;
 };
 
@@ -136,27 +127,28 @@ class ServerlessTsoa {
     this.hooks = {
       initialize: async () => {},
       "tsoa:run": async () => {
-        await this.generateSpecAndRoutes();
+        await this.generate();
       },
       "before:offline:start": async () => {
         this.log.verbose("before:offline:start");
-        const { specFile, routesFile } = await this.generateSpecAndRoutes();
+        const { specFile, routesFile, clientFiles } = await this.generate();
         if (this.pluginConfig.reloadHandler) {
-          await this.watch(specFile, routesFile);
+          await this.watch(specFile, routesFile, clientFiles);
         }
       },
       "before:package:createDeploymentArtifacts": async () => {
         this.log.verbose("before:package:createDeploymentArtifacts");
-        await this.generateSpecAndRoutes();
+        await this.generate();
       },
     };
   }
 
-  generateSpecAndRoutes = async (): Promise<{
+  generate = async (): Promise<{
     specFile: string;
     routesFile: string;
+    clientFiles: string[];
   }> => {
-    const { spec, routes } = this.pluginConfig;
+    const { spec, routes, client } = this.pluginConfig;
     if (!spec) {
       throw new Error(
         "No custom.tsoa.spec configuration found in serverless.yml"
@@ -193,20 +185,45 @@ class ServerlessTsoa {
     // const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
     // routes.routesDir = path.join(workDir, routes.routesDir);
 
-    this.log.verbose(`Generating spec...`);
-    await generateSpec(spec);
-    this.log.verbose(`Generating routes...`);
-    await generateRoutes(routes);
+    await generateTsoaSpec(spec);
+    this.log.verbose(`Generated OpenAPI Spec: ${specOutputFile}`);
+
+    await generateTsoaRoutes(routes);
+    this.log.verbose(`Generated OpenAPI Routes: ${routesOutputFile}`);
+
+    let clientFiles: string[] = [];
+
+    if (client && client.output) {
+      await generateClientSpec(client, this.serverlessConfig.servicePath);
+      const target =
+        typeof client.output === "string"
+          ? client.output
+          : client.output.target;
+
+      // TODO: Gather additional client files for more advanced configurations
+      if (target) {
+        this.log.verbose(`Generated OpenAPI Client: ${target}`);
+        clientFiles.push(target);
+      }
+    }
 
     await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
 
     // DEVNOTE: Can't do workdir for routes since tsoa screws up relatve paths
     // await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
 
-    return { specFile: specOutputFile, routesFile: routesOutputFile };
+    return {
+      specFile: specOutputFile,
+      routesFile: routesOutputFile,
+      clientFiles,
+    };
   };
 
-  watch = async (specFile: string, routesFile: string): Promise<void> => {
+  watch = async (
+    specFile: string,
+    routesFile: string,
+    clientFiles: string[]
+  ): Promise<void> => {
     const watcher = chokidar.watch(
       path.join(this.serverlessConfig.servicePath),
       {
@@ -216,11 +233,11 @@ class ServerlessTsoa {
       }
     );
 
-    watcher.unwatch([specFile, routesFile]);
+    watcher.unwatch([specFile, routesFile, ...clientFiles]);
 
     watcher.on("change", async (file) => {
       this.log.verbose(`File ${file} has been changed`);
-      await this.generateSpecAndRoutes();
+      await this.generate();
     });
   };
 
