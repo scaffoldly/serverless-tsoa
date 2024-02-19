@@ -363,6 +363,7 @@ class ServerlessTsoa {
     src: string,
     dest: string
   ): Promise<string | undefined> => {
+    console.log(`!!! conditionalCopy src: ${src} dest: ${dest}`);
     // hash src and dest
     const [srcHash, destHash] = await Promise.all([
       this.hashFile(src),
@@ -379,7 +380,6 @@ class ServerlessTsoa {
   };
 
   hashFile = async (file: string): Promise<string> => {
-    console.log(new Error(`hashing file ${file}`));
     try {
       const buffer = await fs.readFile(file);
       return sha1(buffer);
