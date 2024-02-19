@@ -232,20 +232,17 @@ class ServerlessTsoa {
     );
 
     const workdirSpecFile = path.join(workDir, this.specFile);
-    console.log("!!! workdirSpecFile", workdirSpecFile);
     spec.outputDirectory = path.join(workDir, spec.outputDirectory);
-    console.log("!!! spec.outputDirectory", spec.outputDirectory);
 
     openApiDestinations.push(this.specFile);
 
-    // Capture a hash of the spec file, which will be used to determine if a reload is necessary
-    this.specHash = await this.hashFile(workdirSpecFile);
     try {
       await generateTsoaSpec(spec);
     } catch (e) {
       if (!(e instanceof Error)) {
         throw e;
       }
+      this.specHash = undefined;
       this.log.warning(e.message);
       return;
     }
