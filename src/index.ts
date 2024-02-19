@@ -24,6 +24,10 @@ type PluginConfig = {
 
 type ServerlessCustom = {
   tsoa?: PluginConfig;
+  esbuild?: {
+    outputWorkFolder?: string;
+    outputBuildFolder?: string;
+  };
 };
 
 type ServerlessService = {
@@ -161,19 +165,23 @@ class ServerlessTsoa {
       );
     }
 
-    // Do generate into a workdir to avoid excessive reloading
-    const workDir = path.join(
-      this.serverlessConfig.servicePath,
-      `.${PLUGIN_NAME}`
-    );
+    let openApiDestinations: string[] = [];
+
+    const { esbuild } = this.serverless.service.custom || {};
+
+    if (esbuild) {
+      const outputWorkFolder = esbuild.outputWorkFolder || ".esbuild";
+      const outputBuildFolder = esbuild.outputBuildFolder || ".build";
+      openApiDestinations.push(path.join(outputWorkFolder, outputBuildFolder));
+    }
+
+    // TODO: support webpack and native bundling to .serverless
 
     const specOutputDirectory = spec.outputDirectory;
     const specOutputFile = path.join(
       specOutputDirectory,
       `${spec.specFileBaseName || "swagger"}.${spec.yaml ? "yaml" : "json"}`
     );
-    const workdirSpecOutputFile = path.join(workDir, specOutputFile);
-    spec.outputDirectory = path.join(workDir, spec.outputDirectory);
 
     const routesOutputDirectory = routes.routesDir;
     const routesOutputFile = path.join(
@@ -181,14 +189,17 @@ class ServerlessTsoa {
       `${routes.routesFileName || "routes.ts"}`
     );
 
-    // DEVNOTE: Can't do workdir for routes since tsoa screws up relatve paths
-    // const workdirRoutesOutputFile = path.join(workDir, routesOutputFile);
-    // routes.routesDir = path.join(workDir, routes.routesDir);
-
     await generateTsoaSpec(spec);
     this.log.verbose(`Generated OpenAPI Spec: ${specOutputFile}`);
 
-    await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
+    await Promise.all(
+      openApiDestinations.map(async (dest) => {
+        await this.conditionalCopy(
+          specOutputFile,
+          path.join(dest, specOutputFile)
+        );
+      })
+    );
 
     await generateTsoaRoutes(routes);
     this.log.verbose(`Generated OpenAPI Routes: ${routesOutputFile}`);
@@ -216,9 +227,6 @@ class ServerlessTsoa {
         clientFiles.push(target);
       }
     }
-
-    // DEVNOTE: Can't do workdir for routes since tsoa screws up relatve paths
-    // await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
 
     return {
       specFile: path.join(this.serverlessConfig.servicePath, specOutputFile),
@@ -260,6 +268,7 @@ class ServerlessTsoa {
     if (srcHash !== destHash) {
       await fs.ensureDir(path.dirname(dest));
       await fs.copy(src, dest);
+      this.log.verbose(`Copied ${src} to ${dest}`);
     }
   };
 
