@@ -219,7 +219,7 @@ class ServerlessTsoa {
       await generateClientSpec(
         {
           input: {
-            target: path.join(this.serverlessConfig.servicePath, specFile),
+            target: workdirSpecFile,
           },
           output,
         },
