@@ -188,6 +188,8 @@ class ServerlessTsoa {
     await generateTsoaSpec(spec);
     this.log.verbose(`Generated OpenAPI Spec: ${specOutputFile}`);
 
+    await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
+
     await generateTsoaRoutes(routes);
     this.log.verbose(`Generated OpenAPI Routes: ${routesOutputFile}`);
 
@@ -195,7 +197,15 @@ class ServerlessTsoa {
 
     if (client) {
       await generateClientSpec(
-        { input: { target: workdirSpecOutputFile }, output: client },
+        {
+          input: {
+            target: path.join(
+              this.serverlessConfig.servicePath,
+              specOutputFile
+            ),
+          },
+          output: client,
+        },
         this.serverlessConfig.servicePath
       );
       const target = typeof client === "string" ? client : client.target;
@@ -207,14 +217,15 @@ class ServerlessTsoa {
       }
     }
 
-    await this.conditionalCopy(workdirSpecOutputFile, specOutputFile);
-
     // DEVNOTE: Can't do workdir for routes since tsoa screws up relatve paths
     // await this.conditionalCopy(workdirRoutesOutputFile, routesOutputFile);
 
     return {
-      specFile: specOutputFile,
-      routesFile: routesOutputFile,
+      specFile: path.join(this.serverlessConfig.servicePath, specOutputFile),
+      routesFile: path.join(
+        this.serverlessConfig.servicePath,
+        routesOutputFile
+      ),
       clientFiles,
     };
   };
