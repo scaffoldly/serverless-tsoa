@@ -10,7 +10,7 @@ import {
   ExtendedSpecConfig,
 } from "tsoa";
 import { generate as generateClientSpec } from "orval";
-import { Options as ClientConfig } from "@orval/core";
+import { OutputOptions as ClientOutputConfig } from "@orval/core";
 
 type PluginName = "tsoa";
 const PLUGIN_NAME: PluginName = "tsoa";
@@ -19,7 +19,7 @@ type PluginConfig = {
   reloadHandler?: boolean;
   spec?: ExtendedSpecConfig;
   routes?: ExtendedRoutesConfig;
-  client?: ClientConfig;
+  client?: string | ClientOutputConfig;
 };
 
 type ServerlessCustom = {
@@ -193,12 +193,12 @@ class ServerlessTsoa {
 
     let clientFiles: string[] = [];
 
-    if (client && client.output) {
-      await generateClientSpec(client, this.serverlessConfig.servicePath);
-      const target =
-        typeof client.output === "string"
-          ? client.output
-          : client.output.target;
+    if (client) {
+      await generateClientSpec(
+        { input: { target: workdirSpecOutputFile }, output: client },
+        this.serverlessConfig.servicePath
+      );
+      const target = typeof client === "string" ? client : client.target;
 
       // TODO: Gather additional client files for more advanced configurations
       if (target) {
