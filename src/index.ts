@@ -270,7 +270,7 @@ class ServerlessTsoa {
         this.log.warning(`Unable to generate OpenAPI Routes: ${e.message}`);
       });
 
-    this.generateClientSpec(workdirSpecFile, workDir)
+    this.generateClientSpec(this.specFile, workDir)
       .then((clientFile) => {
         if (clientFile) {
           this.log.verbose(`Generated OpenAPI Client: ${clientFile}`);
