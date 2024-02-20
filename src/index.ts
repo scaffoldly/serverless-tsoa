@@ -136,7 +136,7 @@ class ServerlessTsoa {
       },
       "before:offline:start": async () => {
         this.log.verbose("before:offline:start");
-        // await this.generate(); // assuming that tsoa:run was pre-executed
+        await this.generate();
         await this.watch();
       },
       "before:package:createDeploymentArtifacts": async () => {
