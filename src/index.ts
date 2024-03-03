@@ -73,8 +73,6 @@ class Log {
   verbose = (message: string) => {
     if (this.options.log) {
       this.options.log.verbose(Log.msg(message));
-    } else {
-      console.log(Log.msg(message));
     }
   };
 
