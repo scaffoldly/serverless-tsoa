@@ -304,10 +304,16 @@ class ServerlessTsoa {
 
     const workdirTarget = path.join(workDir, target);
 
-    const output: ClientOutputConfig =
+    const output =
       typeof client === "string"
         ? { target: workdirTarget }
         : { ...client, target: workdirTarget };
+
+    output.override = output.override || {};
+    const { title } = output.override;
+    if (title && typeof title === "string") {
+      output.override.title = () => title;
+    }
 
     await generateClientSpec(
       {
