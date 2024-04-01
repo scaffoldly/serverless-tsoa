@@ -1,6 +1,6 @@
 {
   "name": "serverless-tsoa",
-  "version": "0.1.5",
+  "version": "0.1.6-0",
   "engines": {
     "node": ">=18"
   },
